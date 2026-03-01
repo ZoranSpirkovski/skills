@@ -1,0 +1,11 @@
+{
+  "name": "skills",
+  "owner": { "name": "Zoran Spirkovski" },
+  "metadata": { "description": "Personal skills marketplace", "version": "1.0.0" },
+  "plugins": [{
+    "name": "context-file-hygiene",
+    "description": "Audit and trim CLAUDE.md files to minimal behavioral directives",
+    "source": "./plugins/context-file-hygiene",
+    "version": "1.0.0"
+  }]
+}
