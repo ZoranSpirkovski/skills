@@ -1,0 +1,10 @@
+{
+  "name": "creating-agent-teams",
+  "description": "Guide for creating and managing Claude Code agent teams with model selection, communication patterns, and prompt templates",
+  "version": "1.0.0",
+  "skills": [
+    "skills/creating-agent-teams/SKILL.md",
+    "skills/creating-agent-teams/agent-prompt-template.md",
+    "skills/creating-agent-teams/research.md"
+  ]
+}

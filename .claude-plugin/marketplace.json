@@ -7,5 +7,10 @@
     "description": "Audit and trim CLAUDE.md files to minimal behavioral directives",
     "source": "./plugins/context-file-hygiene",
     "version": "1.0.0"
+  }, {
+    "name": "creating-agent-teams",
+    "description": "Guide for creating and managing Claude Code agent teams with model selection, communication patterns, and prompt templates",
+    "source": "./plugins/creating-agent-teams",
+    "version": "1.0.0"
   }]
 }
