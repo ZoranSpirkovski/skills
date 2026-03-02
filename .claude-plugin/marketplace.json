@@ -12,5 +12,10 @@
     "description": "Guide for creating and managing Claude Code agent teams with model selection, communication patterns, and prompt templates",
     "source": "./plugins/creating-agent-teams",
     "version": "1.0.0"
+  }, {
+    "name": "design-system-showcase",
+    "description": "Enforces a living component library page — bootstraps it when missing, gates component work until the showcase is updated, and audits for missing entries",
+    "source": "./plugins/design-system-showcase",
+    "version": "1.0.0"
   }]
 }

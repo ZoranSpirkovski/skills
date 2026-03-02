@@ -8,6 +8,7 @@ Personal skills marketplace for Claude Code.
 |--------|-------------|
 | `context-file-hygiene` | Audit and trim CLAUDE.md files to minimal behavioral directives |
 | `creating-agent-teams` | Guide for creating and managing Claude Code agent teams with model selection, communication patterns, and prompt templates |
+| `design-system-showcase` | Enforces a living component library page — bootstraps it when missing, gates component work until updated, and audits for missing entries |
 
 ## Plugins
 
@@ -29,4 +30,14 @@ Install:
 
 ```
 /install creating-agent-teams@skills
+```
+
+### design-system-showcase
+
+Enforces a living component library page for visual inspection of every UI component. Bootstraps the page when none exists (detecting framework automatically), hard-gates component work until the showcase is updated, and audits for components missing from the page.
+
+Install:
+
+```
+/install design-system-showcase@skills
 ```
