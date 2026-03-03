@@ -17,5 +17,10 @@
     "description": "Enforces a living component library page — bootstraps it when missing, gates component work until the showcase is updated, and audits for missing entries",
     "source": "./plugins/design-system-showcase",
     "version": "1.0.0"
+  }, {
+    "name": "content-audit",
+    "description": "Multi-persona content audit engine — analyzes writing for clarity, jargon, logical flow, and AI-signature patterns",
+    "source": "./plugins/content-audit",
+    "version": "1.0.0"
   }]
 }

@@ -1,0 +1,11 @@
+{
+  "name": "content-audit",
+  "description": "Multi-persona content audit engine — analyzes writing through dynamically generated reader personas for clarity, jargon, logical flow, and AI-signature patterns",
+  "version": "1.0.0",
+  "skills": [
+    "skills/content-audit/SKILL.md",
+    "skills/content-audit/references/audit-phases.md",
+    "skills/content-audit/references/editor-patterns.md",
+    "skills/content-audit/references/example-checklist.md"
+  ]
+}

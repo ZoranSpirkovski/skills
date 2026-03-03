@@ -9,6 +9,7 @@ Personal skills marketplace for Claude Code.
 | `context-file-hygiene` | Audit and trim CLAUDE.md files to minimal behavioral directives |
 | `creating-agent-teams` | Guide for creating and managing Claude Code agent teams with model selection, communication patterns, and prompt templates |
 | `design-system-showcase` | Enforces a living component library page — bootstraps it when missing, gates component work until updated, and audits for missing entries |
+| `content-audit` | Multi-persona content audit engine — analyzes writing for clarity, jargon, logical flow, and AI-signature patterns |
 
 ## Setup
 
@@ -48,4 +49,14 @@ Install:
 
 ```
 /plugin install design-system-showcase@skills
+```
+
+### content-audit
+
+Multi-persona content audit engine that stress-tests any written content through dynamically generated reader personas. Runs 5 audit phases — So What, Jargon, Logical Flow, Checklist, and Editor Pattern checks — then presents a structured report with a change list you approve before applying.
+
+Install:
+
+```
+/plugin install content-audit@skills
 ```
