@@ -10,6 +10,14 @@ Personal skills marketplace for Claude Code.
 | `creating-agent-teams` | Guide for creating and managing Claude Code agent teams with model selection, communication patterns, and prompt templates |
 | `design-system-showcase` | Enforces a living component library page — bootstraps it when missing, gates component work until updated, and audits for missing entries |
 
+## Setup
+
+Add this marketplace to Claude Code (one-time):
+
+```
+/plugin marketplace add ZoranSpirkovski/skills
+```
+
 ## Plugins
 
 ### context-file-hygiene
@@ -19,7 +27,7 @@ Audits CLAUDE.md and similar context files, removing anything the agent can disc
 Install:
 
 ```
-/install context-file-hygiene@skills
+/plugin install context-file-hygiene@skills
 ```
 
 ### creating-agent-teams
@@ -29,7 +37,7 @@ Guides you through deciding whether a task needs a single agent, parallel subage
 Install:
 
 ```
-/install creating-agent-teams@skills
+/plugin install creating-agent-teams@skills
 ```
 
 ### design-system-showcase
@@ -39,5 +47,5 @@ Enforces a living component library page for visual inspection of every UI compo
 Install:
 
 ```
-/install design-system-showcase@skills
+/plugin install design-system-showcase@skills
 ```

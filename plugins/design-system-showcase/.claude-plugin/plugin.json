@@ -1,10 +1,5 @@
 {
   "name": "design-system-showcase",
   "description": "Enforces a living component library page — bootstraps it when missing, gates component work until the showcase is updated, and audits for missing entries",
-  "version": "1.0.0",
-  "skills": [
-    "skills/design-system-showcase/SKILL.md",
-    "skills/design-system-showcase/references/page-structure.md",
-    "skills/design-system-showcase/references/framework-templates.md"
-  ]
+  "version": "1.0.0"
 }

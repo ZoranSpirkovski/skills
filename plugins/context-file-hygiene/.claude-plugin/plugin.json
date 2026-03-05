@@ -1,6 +1,5 @@
 {
   "name": "context-file-hygiene",
   "description": "Audit and trim CLAUDE.md files to minimal behavioral directives",
-  "version": "1.0.0",
-  "skills": ["skills/context-file-hygiene/SKILL.md"]
+  "version": "1.0.0"
 }
