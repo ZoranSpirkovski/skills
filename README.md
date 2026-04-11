@@ -10,6 +10,7 @@ Personal skills marketplace for Claude Code.
 | `creating-agent-teams` | Guide for creating and managing Claude Code agent teams with model selection, communication patterns, and prompt templates |
 | `design-system-showcase` | Enforces a living component library page — bootstraps it when missing, gates component work until updated, and audits for missing entries |
 | `content-audit` | Multi-persona content audit engine — analyzes writing for clarity, jargon, logical flow, and AI-signature patterns |
+| `llm-wiki` | Bootstraps and operates a persistent, LLM-maintained markdown wiki for personal knowledge bases — the minimal Karpathy pattern |
 
 ## Setup
 
@@ -59,4 +60,14 @@ Install:
 
 ```
 /plugin install content-audit@skills
+```
+
+### llm-wiki
+
+Bootstraps and operates a persistent, LLM-maintained markdown wiki in the current project — the minimal pattern from Andrej Karpathy's [LLM Wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). Creates `raw/`, `wiki/SCHEMA.md`, `wiki/index.md`, `wiki/log.md`, and a `CLAUDE.md` pointer; then handles ingest/query/lint operations with canonical naming, contradiction detection at ingest time, and a grep-friendly log format.
+
+Install:
+
+```
+/plugin install llm-wiki@skills
 ```
