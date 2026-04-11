@@ -1,0 +1,5 @@
+{
+  "name": "llm-wiki-extended",
+  "description": "Extends llm-wiki with memory lifecycle, knowledge graph, hybrid search, automation hooks, and quality controls",
+  "version": "1.0.0"
+}

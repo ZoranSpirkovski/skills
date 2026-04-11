@@ -11,6 +11,7 @@ Personal skills marketplace for Claude Code.
 | `design-system-showcase` | Enforces a living component library page — bootstraps it when missing, gates component work until updated, and audits for missing entries |
 | `content-audit` | Multi-persona content audit engine — analyzes writing for clarity, jargon, logical flow, and AI-signature patterns |
 | `llm-wiki` | Bootstraps and operates a persistent, LLM-maintained markdown wiki for personal knowledge bases — the minimal Karpathy pattern |
+| `llm-wiki-extended` | Extends `llm-wiki` with memory lifecycle, knowledge graph, hybrid search, automation hooks, and quality controls for wikis past ~100 pages |
 
 ## Setup
 
@@ -70,4 +71,14 @@ Install:
 
 ```
 /plugin install llm-wiki@skills
+```
+
+### llm-wiki-extended
+
+Extends `llm-wiki` with the v2 pattern from Rohit Ghumare's [LLM Wiki v2 gist](https://gist.github.com/rohitg00/2067ab416f7bbe447c1977edaaa681e2). Adds confidence scoring, page supersession, consolidation tiers (working/episodic/semantic/procedural), a typed knowledge graph, hybrid BM25+vector+graph search, automation hooks, and new operations (`crystallize`, `forget`, `supersede`, `verify`). Use only when an existing `llm-wiki` has outgrown its flat structure — not for fresh projects.
+
+Install:
+
+```
+/plugin install llm-wiki-extended@skills
 ```
