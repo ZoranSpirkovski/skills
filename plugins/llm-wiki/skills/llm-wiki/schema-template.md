@@ -14,7 +14,7 @@ This document and the wiki itself co-evolve. As conventions become clearer, upda
 ## Layers
 
 - `raw/` — immutable source documents. Read-only for the LLM. The user owns this directory; if a source is wrong, the user edits it.
-- `digested/` — LLM-generated preprocessed markdown. One subdirectory per source (`digested/<slug>/`), containing extracted text (`text.md`), extracted images (`img-001.png`, etc.), and a combined output (`digest.md`). LLM-owned. The user can inspect digests to verify extraction quality.
+- `wiki/digested/` — LLM-generated preprocessed markdown. One subdirectory per source (`wiki/digested/<slug>/`), containing extracted text (`text.md`), extracted images (`img-001.png`, etc.), and a combined output (`digest.md`). LLM-owned. The user can inspect digests to verify extraction quality.
 - `wiki/` — all LLM-generated wiki pages. LLM-owned. The user reads; the LLM writes.
 - `wiki/SCHEMA.md` — this file. The rulebook.
 
@@ -81,11 +81,11 @@ Keep it short. Do not add fields beyond this spec unless you're also extending t
 Digest preprocesses a raw source into clean, structured markdown before ingest. Run digest explicitly ("digest this") or let ingest trigger it automatically for non-trivial formats.
 
 1. **Identify the source** in `raw/` and derive a slug.
-2. **Create `digested/<slug>/`** if it doesn't exist.
-3. **Extract text** using the best available tool (see Format handling below). Save to `digested/<slug>/text.md`. If a tool isn't installed, note what was unavailable and proceed — digest degrades gracefully.
-4. **Extract images** (PDF and docx only) using `pdfimages` or equivalent if available. Save as `digested/<slug>/img-001.png`, etc. Skip if tools aren't available.
+2. **Create `wiki/digested/<slug>/`** if it doesn't exist.
+3. **Extract text** using the best available tool (see Format handling below). Save to `wiki/digested/<slug>/text.md`. If a tool isn't installed, note what was unavailable and proceed — digest degrades gracefully.
+4. **Extract images** (PDF and docx only) using `pdfimages` or equivalent if available. Save as `wiki/digested/<slug>/img-001.png`, etc. Skip if tools aren't available.
 5. **Describe images visually** — use the Read tool on each extracted image (or the source file itself for JPEG/PNG) and write a description capturing labels, annotations, spatial relationships, and layout details.
-6. **Write `digested/<slug>/digest.md`** — combined text + image descriptions with extraction metadata (see SKILL.md for format).
+6. **Write `wiki/digested/<slug>/digest.md`** — combined text + image descriptions with extraction metadata (see SKILL.md for format).
 7. **Log** with op `digest`. Note format, tools used, and any extraction gaps.
 8. **Report** digest path, format, extraction method, and any gaps.
 
@@ -93,7 +93,7 @@ Digest preprocesses a raw source into clean, structured markdown before ingest. 
 
 For every new source:
 
-1. **Read the source.** If `digested/<slug>/digest.md` exists, read that. Otherwise, if the source is a non-trivial format (PDF, docx, xlsx, image file), run digest first. For plain text/markdown, read directly from `raw/`.
+1. **Read the source.** If `wiki/digested/<slug>/digest.md` exists, read that. Otherwise, if the source is a non-trivial format (PDF, docx, xlsx, image file), run digest first. For plain text/markdown, read directly from `raw/`.
 2. **Discuss key takeaways with the user** — three to five bullets, short message. This is your checkpoint.
 3. **Read existing related pages FIRST** — use `index.md` to find candidates. This is how contradictions get caught at ingest time.
 4. **Write the source summary page** at `wiki/sources/<slug>.md`.

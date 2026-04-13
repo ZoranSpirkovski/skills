@@ -27,8 +27,8 @@ Run these steps when `wiki/` does not yet exist.
 3. **Create the directory structure.**
    ```
    ./raw/            # immutable source documents (user-owned inputs)
-   ./digested/       # LLM-generated preprocessed markdown per source
    ./wiki/
+     digested/       # LLM-generated preprocessed markdown per source
      SCHEMA.md       # conventions and workflows for this wiki
      index.md        # content catalog, organized by category
      log.md          # append-only chronological log
@@ -51,11 +51,10 @@ Run these steps when `wiki/` does not yet exist.
 
 ## Architecture
 
-Four layers. Each has a different owner and lifecycle.
+Three layers. Each has a different owner and lifecycle.
 
 - **`raw/`** — user's curated sources. Immutable. You read from it but never modify it. If the user wants to edit a source, they do it themselves.
-- **`digested/`** — LLM-generated preprocessed markdown. One subdirectory per source (`digested/<slug>/`). Contains extracted text, extracted images, and a combined `digest.md`. You own this layer. The user can inspect it to verify extraction quality.
-- **`wiki/`** — LLM-generated wiki pages. You own this entirely. You create pages, update them when new sources arrive, maintain cross-references, and keep everything consistent. The user reads it; you write it.
+- **`wiki/`** — LLM-generated markdown. You own this entirely. Includes wiki pages, preprocessed digests (`wiki/digested/<slug>/`), the index, and the log. The user reads it; you write it.
 - **`wiki/SCHEMA.md`** — the rulebook. Tells any future agent how this specific wiki is structured and what workflows to follow. The user and you co-evolve it over time.
 
 ## Operations
@@ -69,18 +68,18 @@ Triggered when: the user says "digest this", "preprocess these files", drops fil
 Digest preprocesses a raw source into clean, structured markdown so that ingest works from a normalized, inspectable artifact instead of wrestling with file formats.
 
 1. **Identify the source** in `raw/` and derive a slug for it.
-2. **Create `digested/<slug>/`** if it doesn't exist.
+2. **Create `wiki/digested/<slug>/`** if it doesn't exist.
 3. **Extract text.** Use the best available tool for the format:
    - `.md`, `.txt`, `.html` — Read tool, copy content as-is.
    - `.pdf` — `pdftotext` (poppler-utils) if available, otherwise Read tool.
    - `.docx` — Read tool or `python-docx` if available.
    - `.xlsx` — `openpyxl` to render markdown tables if available, otherwise note as unextractable.
    - `.csv` — Read tool, copy as-is.
-   Save extracted text to `digested/<slug>/text.md`.
+   Save extracted text to `wiki/digested/<slug>/text.md`.
    If a tool isn't installed, note what was unavailable and proceed with what works. Digest degrades gracefully — never fail because an optional tool is missing.
-4. **Extract images** (PDF and docx only). Use `pdfimages` (poppler-utils) or equivalent if available. Save extracted images as `digested/<slug>/img-001.png`, `img-002.png`, etc. If extraction tools aren't available, skip this step and note it.
+4. **Extract images** (PDF and docx only). Use `pdfimages` (poppler-utils) or equivalent if available. Save extracted images as `wiki/digested/<slug>/img-001.png`, `img-002.png`, etc. If extraction tools aren't available, skip this step and note it.
 5. **Describe images visually.** For each extracted image (or for the source file itself if it's a JPEG/PNG), use the Read tool to view it and write a description capturing labels, annotations, spatial relationships, and layout details.
-6. **Write `digested/<slug>/digest.md`** combining everything:
+6. **Write `wiki/digested/<slug>/digest.md`** combining everything:
    ```markdown
    # <Source Title>
 
@@ -109,7 +108,7 @@ Digest preprocesses a raw source into clean, structured markdown so that ingest 
 
 Triggered when: the user drops a file into `raw/` and asks to file it, pastes a source in chat, or says "ingest this".
 
-1. **Read the source.** If `digested/<slug>/digest.md` exists, read that — it's the normalized, complete extraction. Otherwise, check whether the source would benefit from digesting first (non-trivial formats like PDF, docx, xlsx, or image files). If so, run digest automatically before proceeding. For plain text/markdown sources pasted in chat or already in a simple format, read directly from `raw/`.
+1. **Read the source.** If `wiki/digested/<slug>/digest.md` exists, read that — it's the normalized, complete extraction. Otherwise, check whether the source would benefit from digesting first (non-trivial formats like PDF, docx, xlsx, or image files). If so, run digest automatically before proceeding. For plain text/markdown sources pasted in chat or already in a simple format, read directly from `raw/`.
 2. **Discuss key takeaways with the user in one short message.** Three to five bullet points. This is a checkpoint — it lets the user steer the synthesis before you commit pages. (Exception: if bootstrap and the first ingest happen in the same turn, fold the checkpoint into the final report rather than pausing mid-turn.)
 3. **Read relevant existing pages FIRST.** Use `wiki/index.md` to find existing entity and concept pages related to the source. Read them in full. This is how you detect contradictions before you write them in — it is not optional. (Vacuous on the very first ingest when the index is empty; mandatory every time after that.)
 4. **Write a source summary page** at `wiki/sources/<slug>.md` with frontmatter (see Page Frontmatter below), a summary section, key claims as a numbered list, entities mentioned, and open questions.
@@ -178,7 +177,7 @@ Keep it short. Do not add fields the skill does not specify — page frontmatter
 | Kind | Location | Who writes |
 |---|---|---|
 | User's source files (PDFs, articles, notes, transcripts) | `raw/` | User only |
-| Preprocessed source extractions (text, images, digest) | `digested/<slug>/` | LLM |
+| Preprocessed source extractions (text, images, digest) | `wiki/digested/<slug>/` | LLM |
 | Source summaries | `wiki/sources/` | LLM |
 | Entity pages (people, libraries, projects, systems) | `wiki/entities/` | LLM |
 | Concept pages (ideas, patterns, terms) | `wiki/concepts/` | LLM |
@@ -218,7 +217,7 @@ After every digest, report in this shape:
 ```
 Digested: <source title>
 
-Output: digested/<slug>/digest.md
+Output: wiki/digested/<slug>/digest.md
 Format: <format detected>
 Extraction: <tools used, e.g. "pdftotext + pdfimages + visual Read">
 Images: <N> extracted and described (or "none")
