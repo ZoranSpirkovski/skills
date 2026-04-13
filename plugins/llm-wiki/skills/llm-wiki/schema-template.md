@@ -80,17 +80,22 @@ Keep it short. Do not add fields beyond this spec unless you're also extending t
 For every new source:
 
 1. **Read the source in full** — no skimming.
-2. **Discuss key takeaways with the user** — three to five bullets, short message. This is your checkpoint.
-3. **Read existing related pages FIRST** — use `index.md` to find candidates. This is how contradictions get caught at ingest time.
-4. **Write the source summary page** at `wiki/sources/<slug>.md`.
-5. **Update or create entity and concept pages.** Every entity mentioned gets a page. Every new claim cites the source.
-6. **Flag contradictions** by adding a `## Contradictions` section to affected pages — never silently overwrite.
-7. **Update `wiki/index.md`** — add the new source and any new entity/concept pages.
-8. **Append to `wiki/log.md`** with the canonical prefix:
+2. **Assess source format.** If the source contains images, diagrams, or visual layouts (e.g., image-heavy PDFs, scanned documents, floor plans, annotated maps):
+   - First extract text (Read tool, `pdftotext`, or similar).
+   - Then view the source visually (Read tool on PDF/image files) to capture labels, annotations, spatial relationships, and layout details that text extraction misses.
+   - Note in the source page summary what was extracted via text vs. visual inspection, and flag any content that remains unreadable.
+   Text-only sources skip this step.
+3. **Discuss key takeaways with the user** — three to five bullets, short message. This is your checkpoint.
+4. **Read existing related pages FIRST** — use `index.md` to find candidates. This is how contradictions get caught at ingest time.
+5. **Write the source summary page** at `wiki/sources/<slug>.md`.
+6. **Update or create entity and concept pages.** Every entity mentioned gets a page. Every new claim cites the source.
+7. **Flag contradictions** by adding a `## Contradictions` section to affected pages — never silently overwrite.
+8. **Update `wiki/index.md`** — add the new source and any new entity/concept pages.
+9. **Append to `wiki/log.md`** with the canonical prefix:
    ```
    ## [YYYY-MM-DD] ingest | <source title>
    ```
-9. **Report pages touched** to the user.
+10. **Report pages touched** to the user.
 
 A single source typically touches 5–15 pages. Do not artificially limit yourself.
 
@@ -147,6 +152,17 @@ Where `<op>` is one of: `bootstrap`, `ingest`, `query`, `lint`. This format is l
 - Do not rename slugs.
 - Do not create a page type beyond the four canonical types without also updating this schema.
 
+## Format handling
+
+Some sources are text-extractable (articles, transcripts, plain markdown); others are image-heavy (scanned PDFs, floor plans, annotated diagrams, JPEG proposals). The ingest workflow's format-assessment step handles this automatically, but domain-specific wikis can document preferred tools and known quirks here.
+
+**Default tools by format:**
+- `.md`, `.txt`, `.html` — Read tool (text extraction)
+- `.pdf` — Read tool for visual inspection; `pdftotext` (poppler-utils) for text extraction. Use both passes on image-heavy PDFs.
+- `.jpg`, `.png`, `.svg` — Read tool (visual inspection only)
+
+**Domain-specific notes:** <filled in as the wiki evolves — e.g., "venue floor plans in this project are always image-heavy JPEGs; always use visual inspection" or "transcripts are always plain text; skip format assessment">
+
 ## Co-evolve me
 
 This schema is not immutable. As you learn what works for this specific wiki, update this file. Examples of changes worth making:
@@ -154,5 +170,6 @@ This schema is not immutable. As you learn what works for this specific wiki, up
 - New domain-specific page types (e.g. `character` for a book wiki, `experiment` for a research wiki).
 - New frontmatter tags the user finds useful.
 - Custom lint checks specific to the domain.
+- Format handling notes for source types common in this wiki's domain.
 
 Log schema edits in `wiki/log.md` with op `schema`.

@@ -65,17 +65,22 @@ Three named operations. Always say which one you're running so the user can foll
 Triggered when: the user drops a file into `raw/` and asks to file it, pastes a source in chat, or says "ingest this".
 
 1. **Read the source in full.** Use the Read tool on the file in `raw/`, or read the pasted content. Do not skim.
-2. **Discuss key takeaways with the user in one short message.** Three to five bullet points. This is a checkpoint — it lets the user steer the synthesis before you commit pages. (Exception: if bootstrap and the first ingest happen in the same turn, fold the checkpoint into the final report rather than pausing mid-turn.)
-3. **Read relevant existing pages FIRST.** Use `wiki/index.md` to find existing entity and concept pages related to the source. Read them in full. This is how you detect contradictions before you write them in — it is not optional. (Vacuous on the very first ingest when the index is empty; mandatory every time after that.)
-4. **Write a source summary page** at `wiki/sources/<slug>.md` with frontmatter (see Page Frontmatter below), a summary section, key claims as a numbered list, entities mentioned, and open questions.
-5. **Update or create entity and concept pages.** Every entity mentioned in the source gets a page (create if missing, update if existing). Every claim on an entity page cites its source: `- Uses Raft consensus [sources/raft-vs-paxos-practical]`. When new information contradicts an existing claim, don't overwrite — add a `## Contradictions` section to the affected page flagging both claims and their sources, then tell the user in your summary.
-6. **Update `wiki/index.md`.** Add the new source under `## Sources` with a one-line description. Add any new entity/concept pages under the matching header with one-line descriptions.
-7. **Append to `wiki/log.md`** with the canonical prefix:
+2. **Assess source format.** If the source contains images, diagrams, or visual layouts (e.g., image-heavy PDFs, scanned documents, floor plans, annotated maps):
+   - First extract text (Read tool, `pdftotext`, or similar).
+   - Then view the source visually (Read tool on PDF/image files) to capture labels, annotations, spatial relationships, and layout details that text extraction misses.
+   - Note in the source page summary what was extracted via text vs. visual inspection, and flag any content that remains unreadable.
+   Text-only sources skip this step.
+3. **Discuss key takeaways with the user in one short message.** Three to five bullet points. This is a checkpoint — it lets the user steer the synthesis before you commit pages. (Exception: if bootstrap and the first ingest happen in the same turn, fold the checkpoint into the final report rather than pausing mid-turn.)
+4. **Read relevant existing pages FIRST.** Use `wiki/index.md` to find existing entity and concept pages related to the source. Read them in full. This is how you detect contradictions before you write them in — it is not optional. (Vacuous on the very first ingest when the index is empty; mandatory every time after that.)
+5. **Write a source summary page** at `wiki/sources/<slug>.md` with frontmatter (see Page Frontmatter below), a summary section, key claims as a numbered list, entities mentioned, and open questions.
+6. **Update or create entity and concept pages.** Every entity mentioned in the source gets a page (create if missing, update if existing). Every claim on an entity page cites its source: `- Uses Raft consensus [sources/raft-vs-paxos-practical]`. When new information contradicts an existing claim, don't overwrite — add a `## Contradictions` section to the affected page flagging both claims and their sources, then tell the user in your summary.
+7. **Update `wiki/index.md`.** Add the new source under `## Sources` with a one-line description. Add any new entity/concept pages under the matching header with one-line descriptions.
+8. **Append to `wiki/log.md`** with the canonical prefix:
    ```
    ## [YYYY-MM-DD] ingest | <source title>
    ```
    Under the heading, list pages touched and any contradictions flagged. The prefix format matters: `grep "^## \[" log.md | tail -5` must give a clean last-five-operations view.
-8. **Report back.** List pages touched, show a one-line diff of the index, and paste the log entry preview. A single source typically touches 5–15 pages; do not artificially limit yourself.
+9. **Report back.** List pages touched, show a one-line diff of the index, and paste the log entry preview. A single source typically touches 5–15 pages; do not artificially limit yourself.
 
 ### Query
 
@@ -162,6 +167,7 @@ Keep it short. Do not add fields the skill does not specify — page frontmatter
 - **Forgetting the log entry.** Every operation, every time. No exceptions.
 - **Skipping the schema because "it's obvious."** Future sessions (yours and other agents) cannot read your memory. SCHEMA.md is how you teach future Claude what this wiki expects.
 - **Updating one page and leaving its neighbors stale.** When a source updates an entity, also check concepts and synthesis pages that cite that entity.
+- **Running text-only extraction on image-heavy sources.** Floor plans, annotated diagrams, scanned documents — text extraction produces empty or degraded output. Use the visual Read pass to capture what text extraction misses.
 
 ## Output Format
 
