@@ -1,6 +1,6 @@
 # Wiki Schema
 
-> Placed at `wiki/SCHEMA.md` by the `llm-wiki` skill during bootstrap.
+> Placed at `.wiki/wiki/SCHEMA.md` by the `llm-wiki` skill during bootstrap.
 > This is the rulebook for any LLM agent working on this wiki. Read it in full before making any changes.
 
 ## Domain
@@ -13,16 +13,18 @@ This document and the wiki itself co-evolve. As conventions become clearer, upda
 
 ## Layers
 
-- `raw/` — immutable source documents. Read-only for the LLM. The user owns this directory; if a source is wrong, the user edits it.
-- `wiki/digested/` — LLM-generated preprocessed markdown. One subdirectory per source (`wiki/digested/<slug>/`), containing extracted text (`text.md`), extracted images (`img-001.png`, etc.), and a combined output (`digest.md`). LLM-owned. The user can inspect digests to verify extraction quality.
-- `wiki/` — all LLM-generated wiki pages. LLM-owned. The user reads; the LLM writes.
-- `wiki/SCHEMA.md` — this file. The rulebook.
+Everything lives under `.wiki/` at the project root.
+
+- `.wiki/raw/` — immutable source documents. Read-only for the LLM. The user owns this directory; if a source is wrong, the user edits it.
+- `.wiki/digested/` — LLM-generated preprocessed markdown. Mirrors the folder hierarchy of `.wiki/raw/`, with a slug-named subdirectory at each leaf for the individual file's digest output (containing `text.md`, `img-001.png`, etc., and a combined `digest.md`). LLM-owned. The user can inspect digests to verify extraction quality.
+- `.wiki/wiki/` — all LLM-generated wiki pages. LLM-owned. The user reads; the LLM writes.
+- `.wiki/wiki/SCHEMA.md` — this file. The rulebook.
 
 ## Page types
 
 Four canonical types. Each page has frontmatter declaring its `type`.
 
-### Source pages (`wiki/sources/<slug>.md`)
+### Source pages (`.wiki/wiki/sources/<slug>.md`)
 
 One per ingested source. Contains:
 - Frontmatter (see below)
@@ -31,7 +33,7 @@ One per ingested source. Contains:
 - `## Entities mentioned` — list, each linked with `[[entity-slug]]`
 - `## Open questions` — things the source raised but didn't answer
 
-### Entity pages (`wiki/entities/<slug>.md`)
+### Entity pages (`.wiki/wiki/entities/<slug>.md`)
 
 One per person, library, project, system, organization. Contains:
 - Frontmatter
@@ -40,11 +42,11 @@ One per person, library, project, system, organization. Contains:
 - `## Relationships` — bullet list of links to other entities
 - `## Contradictions` — only if contradictions exist. Never overwrite a claim on contradiction; flag both.
 
-### Concept pages (`wiki/concepts/<slug>.md`)
+### Concept pages (`.wiki/wiki/concepts/<slug>.md`)
 
 One per idea, pattern, term, or abstraction. Same structure as entity pages.
 
-### Synthesis pages (`wiki/synthesis/<slug>.md`)
+### Synthesis pages (`.wiki/wiki/synthesis/<slug>.md`)
 
 One per comparison, analysis, or filed-back query answer. Contains:
 - Frontmatter
@@ -80,12 +82,12 @@ Keep it short. Do not add fields beyond this spec unless you're also extending t
 
 Digest preprocesses a raw source into clean, structured markdown before ingest. Run digest explicitly ("digest this") or let ingest trigger it automatically for non-trivial formats.
 
-1. **Identify the source** in `raw/` and derive a slug.
-2. **Create `wiki/digested/<slug>/`** if it doesn't exist.
-3. **Extract text** using the best available tool (see Format handling below). Save to `wiki/digested/<slug>/text.md`. If a tool isn't installed, note what was unavailable and proceed — digest degrades gracefully.
-4. **Extract images** (PDF and docx only) using `pdfimages` or equivalent if available. Save as `wiki/digested/<slug>/img-001.png`, etc. Skip if tools aren't available.
+1. **Identify the source** in `.wiki/raw/` and derive a slug.
+2. **Create the digest directory**, mirroring the source's folder path from `raw/`. If the source is at `.wiki/raw/Project/Subfolder/file.pdf`, create `.wiki/digested/Project/Subfolder/<slug>/`. The folder hierarchy matches `raw/`; only the leaf uses the slug.
+3. **Extract text** using the best available tool (see Format handling below). Save to the digest directory as `text.md`. If a tool isn't installed, note what was unavailable and proceed — digest degrades gracefully.
+4. **Extract images** (PDF and docx only) using `pdfimages` or equivalent if available. Save in the digest directory as `img-001.png`, etc. Skip if tools aren't available.
 5. **Describe images visually** — use the Read tool on each extracted image (or the source file itself for JPEG/PNG) and write a description capturing labels, annotations, spatial relationships, and layout details.
-6. **Write `wiki/digested/<slug>/digest.md`** — combined text + image descriptions with extraction metadata (see SKILL.md for format).
+6. **Write `digest.md`** in the digest directory — combined text + image descriptions with extraction metadata (see SKILL.md for format).
 7. **Log** with op `digest`. Note format, tools used, and any extraction gaps.
 8. **Report** digest path, format, extraction method, and any gaps.
 
@@ -93,14 +95,14 @@ Digest preprocesses a raw source into clean, structured markdown before ingest. 
 
 For every new source:
 
-1. **Read the source.** If `wiki/digested/<slug>/digest.md` exists, read that. Otherwise, if the source is a non-trivial format (PDF, docx, xlsx, image file), run digest first. For plain text/markdown, read directly from `raw/`.
+1. **Read the source.** If a `digest.md` exists in the source's mirrored digest directory, read that. Otherwise, if the source is a non-trivial format (PDF, docx, xlsx, image file), run digest first. For plain text/markdown, read directly from `.wiki/raw/`.
 2. **Discuss key takeaways with the user** — three to five bullets, short message. This is your checkpoint.
-3. **Read existing related pages FIRST** — use `index.md` to find candidates. This is how contradictions get caught at ingest time.
-4. **Write the source summary page** at `wiki/sources/<slug>.md`.
+3. **Read existing related pages FIRST** — use `.wiki/wiki/index.md` to find candidates. This is how contradictions get caught at ingest time.
+4. **Write the source summary page** at `.wiki/wiki/sources/<slug>.md`.
 5. **Update or create entity and concept pages.** Every entity mentioned gets a page. Every new claim cites the source.
 6. **Flag contradictions** by adding a `## Contradictions` section to affected pages — never silently overwrite.
-7. **Update `wiki/index.md`** — add the new source and any new entity/concept pages.
-8. **Append to `wiki/log.md`** with the canonical prefix:
+7. **Update `.wiki/wiki/index.md`** — add the new source and any new entity/concept pages.
+8. **Append to `.wiki/wiki/log.md`** with the canonical prefix:
    ```
    ## [YYYY-MM-DD] ingest | <source title>
    ```
@@ -110,7 +112,7 @@ A single source typically touches 5–15 pages. Do not artificially limit yourse
 
 ## Query workflow
 
-1. Read `wiki/index.md` to find candidate pages.
+1. Read `.wiki/wiki/index.md` to find candidate pages.
 2. Read candidate pages in full, following cross-references.
 3. Synthesize an answer with one citation per claim.
 4. Offer to file the answer back as a synthesis page. If the user agrees, write it, update the index, log it with op `query`.
@@ -130,7 +132,7 @@ Report findings as a list with proposed fixes. Do not fix silently — let the u
 
 ## Index structure
 
-`wiki/index.md` uses these fixed top-level headers:
+`.wiki/wiki/index.md` uses these fixed top-level headers:
 
 ```
 ## Sources
@@ -143,7 +145,7 @@ Under each, one line per page: `- [[slug]] — one-line description`. Sorted alp
 
 ## Log format
 
-`wiki/log.md` is append-only. Every operation gets one entry. Canonical prefix:
+`.wiki/wiki/log.md` is append-only. Every operation gets one entry. Canonical prefix:
 
 ```
 ## [YYYY-MM-DD] <op> | <title>
@@ -153,7 +155,7 @@ Where `<op>` is one of: `bootstrap`, `digest`, `ingest`, `query`, `lint`. This f
 
 ## What NOT to do
 
-- Do not edit files in `raw/`.
+- Do not edit files in `.wiki/raw/`.
 - Do not write new claims without reading existing related pages first.
 - Do not silently overwrite a claim when new information contradicts it — flag both.
 - Do not skip the log entry.
@@ -186,4 +188,4 @@ This schema is not immutable. As you learn what works for this specific wiki, up
 - Custom lint checks specific to the domain.
 - Format handling notes for source types common in this wiki's domain.
 
-Log schema edits in `wiki/log.md` with op `schema`.
+Log schema edits in `.wiki/wiki/log.md` with op `schema`.

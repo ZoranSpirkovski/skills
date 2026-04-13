@@ -36,7 +36,7 @@
       "name": "llm-wiki",
       "description": "Bootstraps and operates a persistent, LLM-maintained markdown wiki for personal knowledge bases — the minimal Karpathy pattern",
       "source": "./plugins/llm-wiki",
-      "version": "1.2.1"
+      "version": "1.3.0"
     },
     {
       "name": "llm-wiki-extended",
