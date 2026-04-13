@@ -15,7 +15,7 @@ description: Use when the user wants to build or maintain a personal knowledge b
 
 1. Check whether `./raw/` and `./wiki/SCHEMA.md` exist in the current working directory.
    - **Neither exists** → Bootstrap Flow (below)
-   - **Both exist** → Operate Flow (identify whether the user wants ingest, query, or lint, then run it)
+   - **Both exist** → Operate Flow (identify whether the user wants digest, ingest, query, or lint, then run it)
 2. Always read `wiki/SCHEMA.md` in full before doing any wiki work on an existing wiki. It encodes conventions specific to this wiki's domain that override generic defaults.
 
 ## Bootstrap Flow
@@ -27,6 +27,7 @@ Run these steps when `wiki/` does not yet exist.
 3. **Create the directory structure.**
    ```
    ./raw/            # immutable source documents (user-owned inputs)
+   ./digested/       # LLM-generated preprocessed markdown per source
    ./wiki/
      SCHEMA.md       # conventions and workflows for this wiki
      index.md        # content catalog, organized by category
@@ -50,37 +51,76 @@ Run these steps when `wiki/` does not yet exist.
 
 ## Architecture
 
-Three layers. Each has a different owner and lifecycle.
+Four layers. Each has a different owner and lifecycle.
 
 - **`raw/`** — user's curated sources. Immutable. You read from it but never modify it. If the user wants to edit a source, they do it themselves.
-- **`wiki/`** — LLM-generated markdown. You own this entirely. You create pages, update them when new sources arrive, maintain cross-references, and keep everything consistent. The user reads it; you write it.
+- **`digested/`** — LLM-generated preprocessed markdown. One subdirectory per source (`digested/<slug>/`). Contains extracted text, extracted images, and a combined `digest.md`. You own this layer. The user can inspect it to verify extraction quality.
+- **`wiki/`** — LLM-generated wiki pages. You own this entirely. You create pages, update them when new sources arrive, maintain cross-references, and keep everything consistent. The user reads it; you write it.
 - **`wiki/SCHEMA.md`** — the rulebook. Tells any future agent how this specific wiki is structured and what workflows to follow. The user and you co-evolve it over time.
 
 ## Operations
 
-Three named operations. Always say which one you're running so the user can follow along.
+Four named operations. Always say which one you're running so the user can follow along.
+
+### Digest
+
+Triggered when: the user says "digest this", "preprocess these files", drops files into `raw/` and asks to prepare them, or says "digest all undigested files in raw/". Also triggered automatically by ingest when a source has no existing digest.
+
+Digest preprocesses a raw source into clean, structured markdown so that ingest works from a normalized, inspectable artifact instead of wrestling with file formats.
+
+1. **Identify the source** in `raw/` and derive a slug for it.
+2. **Create `digested/<slug>/`** if it doesn't exist.
+3. **Extract text.** Use the best available tool for the format:
+   - `.md`, `.txt`, `.html` — Read tool, copy content as-is.
+   - `.pdf` — `pdftotext` (poppler-utils) if available, otherwise Read tool.
+   - `.docx` — Read tool or `python-docx` if available.
+   - `.xlsx` — `openpyxl` to render markdown tables if available, otherwise note as unextractable.
+   - `.csv` — Read tool, copy as-is.
+   Save extracted text to `digested/<slug>/text.md`.
+   If a tool isn't installed, note what was unavailable and proceed with what works. Digest degrades gracefully — never fail because an optional tool is missing.
+4. **Extract images** (PDF and docx only). Use `pdfimages` (poppler-utils) or equivalent if available. Save extracted images as `digested/<slug>/img-001.png`, `img-002.png`, etc. If extraction tools aren't available, skip this step and note it.
+5. **Describe images visually.** For each extracted image (or for the source file itself if it's a JPEG/PNG), use the Read tool to view it and write a description capturing labels, annotations, spatial relationships, and layout details.
+6. **Write `digested/<slug>/digest.md`** combining everything:
+   ```markdown
+   # <Source Title>
+
+   **Raw file:** `<path to original>`
+   **Format:** <format> | **Digested:** <date>
+   **Extraction notes:** <what tools were used, what was lossy, what was unavailable>
+
+   ## Text Content
+   <extracted text, cleaned up>
+
+   ## Image 1: <filename>
+   <visual description>
+
+   ## Image 2: <filename>
+   ...
+   ```
+   For text-only sources, the `## Image` sections are omitted.
+7. **Append to `wiki/log.md`** with the canonical prefix:
+   ```
+   ## [YYYY-MM-DD] digest | <source title>
+   ```
+   Note the format, tools used, and any extraction gaps.
+8. **Report back.** Show the digest path, format detected, extraction method used, and any gaps the user should review.
 
 ### Ingest
 
 Triggered when: the user drops a file into `raw/` and asks to file it, pastes a source in chat, or says "ingest this".
 
-1. **Read the source in full.** Use the Read tool on the file in `raw/`, or read the pasted content. Do not skim.
-2. **Assess source format.** If the source contains images, diagrams, or visual layouts (e.g., image-heavy PDFs, scanned documents, floor plans, annotated maps):
-   - First extract text (Read tool, `pdftotext`, or similar).
-   - Then view the source visually (Read tool on PDF/image files) to capture labels, annotations, spatial relationships, and layout details that text extraction misses.
-   - Note in the source page summary what was extracted via text vs. visual inspection, and flag any content that remains unreadable.
-   Text-only sources skip this step.
-3. **Discuss key takeaways with the user in one short message.** Three to five bullet points. This is a checkpoint — it lets the user steer the synthesis before you commit pages. (Exception: if bootstrap and the first ingest happen in the same turn, fold the checkpoint into the final report rather than pausing mid-turn.)
-4. **Read relevant existing pages FIRST.** Use `wiki/index.md` to find existing entity and concept pages related to the source. Read them in full. This is how you detect contradictions before you write them in — it is not optional. (Vacuous on the very first ingest when the index is empty; mandatory every time after that.)
-5. **Write a source summary page** at `wiki/sources/<slug>.md` with frontmatter (see Page Frontmatter below), a summary section, key claims as a numbered list, entities mentioned, and open questions.
-6. **Update or create entity and concept pages.** Every entity mentioned in the source gets a page (create if missing, update if existing). Every claim on an entity page cites its source: `- Uses Raft consensus [sources/raft-vs-paxos-practical]`. When new information contradicts an existing claim, don't overwrite — add a `## Contradictions` section to the affected page flagging both claims and their sources, then tell the user in your summary.
-7. **Update `wiki/index.md`.** Add the new source under `## Sources` with a one-line description. Add any new entity/concept pages under the matching header with one-line descriptions.
-8. **Append to `wiki/log.md`** with the canonical prefix:
+1. **Read the source.** If `digested/<slug>/digest.md` exists, read that — it's the normalized, complete extraction. Otherwise, check whether the source would benefit from digesting first (non-trivial formats like PDF, docx, xlsx, or image files). If so, run digest automatically before proceeding. For plain text/markdown sources pasted in chat or already in a simple format, read directly from `raw/`.
+2. **Discuss key takeaways with the user in one short message.** Three to five bullet points. This is a checkpoint — it lets the user steer the synthesis before you commit pages. (Exception: if bootstrap and the first ingest happen in the same turn, fold the checkpoint into the final report rather than pausing mid-turn.)
+3. **Read relevant existing pages FIRST.** Use `wiki/index.md` to find existing entity and concept pages related to the source. Read them in full. This is how you detect contradictions before you write them in — it is not optional. (Vacuous on the very first ingest when the index is empty; mandatory every time after that.)
+4. **Write a source summary page** at `wiki/sources/<slug>.md` with frontmatter (see Page Frontmatter below), a summary section, key claims as a numbered list, entities mentioned, and open questions.
+5. **Update or create entity and concept pages.** Every entity mentioned in the source gets a page (create if missing, update if existing). Every claim on an entity page cites its source: `- Uses Raft consensus [sources/raft-vs-paxos-practical]`. When new information contradicts an existing claim, don't overwrite — add a `## Contradictions` section to the affected page flagging both claims and their sources, then tell the user in your summary.
+6. **Update `wiki/index.md`.** Add the new source under `## Sources` with a one-line description. Add any new entity/concept pages under the matching header with one-line descriptions.
+7. **Append to `wiki/log.md`** with the canonical prefix:
    ```
    ## [YYYY-MM-DD] ingest | <source title>
    ```
    Under the heading, list pages touched and any contradictions flagged. The prefix format matters: `grep "^## \[" log.md | tail -5` must give a clean last-five-operations view.
-9. **Report back.** List pages touched, show a one-line diff of the index, and paste the log entry preview. A single source typically touches 5–15 pages; do not artificially limit yourself.
+8. **Report back.** List pages touched, show a one-line diff of the index, and paste the log entry preview. A single source typically touches 5–15 pages; do not artificially limit yourself.
 
 ### Query
 
@@ -113,7 +153,7 @@ For each finding, propose a specific fix. Do not fix silently — list the fix a
 
 **`wiki/index.md` is content-oriented.** Organized by category with these fixed headers: `## Sources`, `## Entities`, `## Concepts`, `## Synthesis`. Under each, one line per page: `- [[slug]] — one-line description`. Update on every ingest, every new synthesis page, and every lint-driven promotion.
 
-**`wiki/log.md` is chronological and append-only.** Every operation gets one entry. Canonical prefix format: `## [YYYY-MM-DD] <op> | <title>` where `<op>` is `bootstrap`, `ingest`, `query`, `lint`, or `schema`. The `## [` prefix is load-bearing — it makes `grep "^## \[" log.md` a usable timeline tool. The body under each heading is free-form: pages touched, contradictions flagged, notes. Do not mix prefix formats; do not put operations anywhere but the log.
+**`wiki/log.md` is chronological and append-only.** Every operation gets one entry. Canonical prefix format: `## [YYYY-MM-DD] <op> | <title>` where `<op>` is `bootstrap`, `digest`, `ingest`, `query`, `lint`, or `schema`. The `## [` prefix is load-bearing — it makes `grep "^## \[" log.md` a usable timeline tool. The body under each heading is free-form: pages touched, contradictions flagged, notes. Do not mix prefix formats; do not put operations anywhere but the log.
 
 ## Page Frontmatter
 
@@ -138,6 +178,7 @@ Keep it short. Do not add fields the skill does not specify — page frontmatter
 | Kind | Location | Who writes |
 |---|---|---|
 | User's source files (PDFs, articles, notes, transcripts) | `raw/` | User only |
+| Preprocessed source extractions (text, images, digest) | `digested/<slug>/` | LLM |
 | Source summaries | `wiki/sources/` | LLM |
 | Entity pages (people, libraries, projects, systems) | `wiki/entities/` | LLM |
 | Concept pages (ideas, patterns, terms) | `wiki/concepts/` | LLM |
@@ -167,9 +208,25 @@ Keep it short. Do not add fields the skill does not specify — page frontmatter
 - **Forgetting the log entry.** Every operation, every time. No exceptions.
 - **Skipping the schema because "it's obvious."** Future sessions (yours and other agents) cannot read your memory. SCHEMA.md is how you teach future Claude what this wiki expects.
 - **Updating one page and leaving its neighbors stale.** When a source updates an entity, also check concepts and synthesis pages that cite that entity.
-- **Running text-only extraction on image-heavy sources.** Floor plans, annotated diagrams, scanned documents — text extraction produces empty or degraded output. Use the visual Read pass to capture what text extraction misses.
+- **Running text-only extraction on image-heavy sources.** Floor plans, annotated diagrams, scanned documents — text extraction produces empty or degraded output. Run digest first to extract images and describe them visually.
+- **Skipping digest on complex formats.** PDFs, docx, and xlsx files should be digested before ingest. The digest artifact is inspectable — the user can verify extraction quality before wiki synthesis happens.
 
 ## Output Format
+
+After every digest, report in this shape:
+
+```
+Digested: <source title>
+
+Output: digested/<slug>/digest.md
+Format: <format detected>
+Extraction: <tools used, e.g. "pdftotext + pdfimages + visual Read">
+Images: <N> extracted and described (or "none")
+Gaps: <anything lossy or unreadable> (or "none")
+
+Log entry:
+## [YYYY-MM-DD] digest | <title>
+```
 
 After every ingest, report in this shape:
 
@@ -185,7 +242,7 @@ Pages touched:
 Contradictions flagged: <N> (or "none")
 
 Log entry:
-## [2026-04-11] ingest | <title>
+## [YYYY-MM-DD] ingest | <title>
 - Touched: ...
 ```
 

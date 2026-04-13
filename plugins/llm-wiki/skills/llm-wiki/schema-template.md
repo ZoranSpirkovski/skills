@@ -14,7 +14,8 @@ This document and the wiki itself co-evolve. As conventions become clearer, upda
 ## Layers
 
 - `raw/` — immutable source documents. Read-only for the LLM. The user owns this directory; if a source is wrong, the user edits it.
-- `wiki/` — all LLM-generated pages. LLM-owned. The user reads; the LLM writes.
+- `digested/` — LLM-generated preprocessed markdown. One subdirectory per source (`digested/<slug>/`), containing extracted text (`text.md`), extracted images (`img-001.png`, etc.), and a combined output (`digest.md`). LLM-owned. The user can inspect digests to verify extraction quality.
+- `wiki/` — all LLM-generated wiki pages. LLM-owned. The user reads; the LLM writes.
 - `wiki/SCHEMA.md` — this file. The rulebook.
 
 ## Page types
@@ -75,27 +76,35 @@ Keep it short. Do not add fields beyond this spec unless you're also extending t
 - Entity and concept slugs use the canonical name: `raft`, `paxos`, `leslie-lamport`, `leader-election`.
 - Never rename a slug once it exists. If a name changes, create a new page and add a redirect stub in the old one.
 
+## Digest workflow
+
+Digest preprocesses a raw source into clean, structured markdown before ingest. Run digest explicitly ("digest this") or let ingest trigger it automatically for non-trivial formats.
+
+1. **Identify the source** in `raw/` and derive a slug.
+2. **Create `digested/<slug>/`** if it doesn't exist.
+3. **Extract text** using the best available tool (see Format handling below). Save to `digested/<slug>/text.md`. If a tool isn't installed, note what was unavailable and proceed — digest degrades gracefully.
+4. **Extract images** (PDF and docx only) using `pdfimages` or equivalent if available. Save as `digested/<slug>/img-001.png`, etc. Skip if tools aren't available.
+5. **Describe images visually** — use the Read tool on each extracted image (or the source file itself for JPEG/PNG) and write a description capturing labels, annotations, spatial relationships, and layout details.
+6. **Write `digested/<slug>/digest.md`** — combined text + image descriptions with extraction metadata (see SKILL.md for format).
+7. **Log** with op `digest`. Note format, tools used, and any extraction gaps.
+8. **Report** digest path, format, extraction method, and any gaps.
+
 ## Ingest workflow
 
 For every new source:
 
-1. **Read the source in full** — no skimming.
-2. **Assess source format.** If the source contains images, diagrams, or visual layouts (e.g., image-heavy PDFs, scanned documents, floor plans, annotated maps):
-   - First extract text (Read tool, `pdftotext`, or similar).
-   - Then view the source visually (Read tool on PDF/image files) to capture labels, annotations, spatial relationships, and layout details that text extraction misses.
-   - Note in the source page summary what was extracted via text vs. visual inspection, and flag any content that remains unreadable.
-   Text-only sources skip this step.
-3. **Discuss key takeaways with the user** — three to five bullets, short message. This is your checkpoint.
-4. **Read existing related pages FIRST** — use `index.md` to find candidates. This is how contradictions get caught at ingest time.
-5. **Write the source summary page** at `wiki/sources/<slug>.md`.
-6. **Update or create entity and concept pages.** Every entity mentioned gets a page. Every new claim cites the source.
-7. **Flag contradictions** by adding a `## Contradictions` section to affected pages — never silently overwrite.
-8. **Update `wiki/index.md`** — add the new source and any new entity/concept pages.
-9. **Append to `wiki/log.md`** with the canonical prefix:
+1. **Read the source.** If `digested/<slug>/digest.md` exists, read that. Otherwise, if the source is a non-trivial format (PDF, docx, xlsx, image file), run digest first. For plain text/markdown, read directly from `raw/`.
+2. **Discuss key takeaways with the user** — three to five bullets, short message. This is your checkpoint.
+3. **Read existing related pages FIRST** — use `index.md` to find candidates. This is how contradictions get caught at ingest time.
+4. **Write the source summary page** at `wiki/sources/<slug>.md`.
+5. **Update or create entity and concept pages.** Every entity mentioned gets a page. Every new claim cites the source.
+6. **Flag contradictions** by adding a `## Contradictions` section to affected pages — never silently overwrite.
+7. **Update `wiki/index.md`** — add the new source and any new entity/concept pages.
+8. **Append to `wiki/log.md`** with the canonical prefix:
    ```
    ## [YYYY-MM-DD] ingest | <source title>
    ```
-10. **Report pages touched** to the user.
+9. **Report pages touched** to the user.
 
 A single source typically touches 5–15 pages. Do not artificially limit yourself.
 
@@ -140,7 +149,7 @@ Under each, one line per page: `- [[slug]] — one-line description`. Sorted alp
 ## [YYYY-MM-DD] <op> | <title>
 ```
 
-Where `<op>` is one of: `bootstrap`, `ingest`, `query`, `lint`. This format is load-bearing: it makes `grep "^## \[" log.md | tail -5` a usable timeline tool.
+Where `<op>` is one of: `bootstrap`, `digest`, `ingest`, `query`, `lint`. This format is load-bearing: it makes `grep "^## \[" log.md | tail -5` a usable timeline tool.
 
 ## What NOT to do
 
@@ -154,14 +163,19 @@ Where `<op>` is one of: `bootstrap`, `ingest`, `query`, `lint`. This format is l
 
 ## Format handling
 
-Some sources are text-extractable (articles, transcripts, plain markdown); others are image-heavy (scanned PDFs, floor plans, annotated diagrams, JPEG proposals). The ingest workflow's format-assessment step handles this automatically, but domain-specific wikis can document preferred tools and known quirks here.
+The digest operation handles format extraction. These are the default tools per format — all are best-effort (digest degrades gracefully if a tool isn't installed).
 
-**Default tools by format:**
-- `.md`, `.txt`, `.html` — Read tool (text extraction)
-- `.pdf` — Read tool for visual inspection; `pdftotext` (poppler-utils) for text extraction. Use both passes on image-heavy PDFs.
-- `.jpg`, `.png`, `.svg` — Read tool (visual inspection only)
+| Format | Text extraction | Image extraction | Visual pass |
+|--------|----------------|------------------|-------------|
+| `.md`, `.txt`, `.csv` | Read tool (copy as-is) | N/A | N/A |
+| `.html` | Read tool | N/A | N/A |
+| `.docx` | Read tool or `python-docx` | Extract embedded images | Describe each image |
+| `.xlsx` | `openpyxl` → markdown tables | N/A | N/A |
+| `.pdf` (text-heavy) | `pdftotext` (poppler) | `pdfimages` (poppler) | Describe extracted images |
+| `.pdf` (image-heavy) | `pdftotext` (poppler) | `pdfimages` (poppler) | Describe each image — primary content source |
+| `.jpg`, `.png`, `.svg` | N/A | File is the image | Read tool visual description |
 
-**Domain-specific notes:** <filled in as the wiki evolves — e.g., "venue floor plans in this project are always image-heavy JPEGs; always use visual inspection" or "transcripts are always plain text; skip format assessment">
+**Domain-specific notes:** <filled in as the wiki evolves — e.g., "venue floor plans in this project are always image-heavy JPEGs; always use visual inspection" or "transcripts are always plain text; skip digest">
 
 ## Co-evolve me
 
