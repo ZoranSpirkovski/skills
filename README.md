@@ -10,7 +10,7 @@ Personal skills marketplace for Claude Code.
 | `creating-agent-teams` | Guide for creating and managing Claude Code agent teams with model selection, communication patterns, and prompt templates |
 | `design-system-showcase` | Enforces a living component library page — bootstraps it when missing, gates component work until updated, and audits for missing entries |
 | `content-audit` | Multi-persona content audit engine — analyzes writing for clarity, jargon, logical flow, and AI-signature patterns |
-| `llm-wiki` | Bootstraps and operates a persistent, LLM-maintained markdown wiki for personal knowledge bases — the minimal Karpathy pattern |
+| `llm-wiki` | PAS-managed persistent markdown wiki — seeds a customizable process into `.pas/` on first invoke (requires `pas-framework`) |
 | `llm-wiki-extended` | Extends `llm-wiki` with memory lifecycle, knowledge graph, hybrid search, automation hooks, and quality controls for wikis past ~100 pages |
 
 ## Setup
@@ -65,7 +65,9 @@ Install:
 
 ### llm-wiki
 
-Bootstraps and operates a persistent, LLM-maintained markdown wiki in the current project — the minimal pattern from Andrej Karpathy's [LLM Wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). Creates `raw/`, `wiki/SCHEMA.md`, `wiki/index.md`, `wiki/log.md`, and a `CLAUDE.md` pointer; then handles ingest/query/lint operations with canonical naming, contradiction detection at ingest time, and a grep-friendly log format.
+PAS-managed persistent markdown wiki in the current project, based on Andrej Karpathy's [LLM Wiki gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f). On first invoke, seeds a process into `.pas/processes/llm-wiki/` containing the orchestrator and five per-operation skills (`bootstrapping`, `digesting`, `ingesting`, `querying`, `linting`). After seeding, the local copy is authoritative — edit it freely for per-project customization. Creates `.wiki/raw/`, `.wiki/digested/`, `.wiki/wiki/SCHEMA.md`, `.wiki/wiki/index.md`, `.wiki/wiki/log.md`, and a `CLAUDE.md` pointer; handles digest/ingest/query/lint with canonical naming, contradiction detection at ingest time, and a grep-friendly log format.
+
+Requires the [`pas-framework`](https://github.com/ZoranSpirkovski/PAS) plugin for the orchestration library and feedback hooks.
 
 Install:
 
